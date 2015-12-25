@@ -1,0 +1,64 @@
+#!/usr/bin/env python3
+import sys
+import struct
+import argparse
+
+# https://github.com/devil-tamachan/binaryeditorbz/blob/master/Bz/BZBmpVw2.cpp
+bz_pallet = []
+bz_pallet += [0xffffff]
+bz_pallet += [0x00ffff] * 31
+bz_pallet += [0xff0000] * (128-31)
+bz_pallet += [0x000000] * 128
+
+# https://github.com/devil-tamachan/binaryeditorbz/blob/master/Bz/BZBmpVw2.cpp
+safe_pallet = []
+for r in range(0x0, 0x100, 0x33):
+    for g in range(0x0, 0x100, 0x33):
+        for b in range(0x0, 0x100, 0x33):
+            safe_pallet += [(r<<16)|(b<<8)|g]
+for gr in range(0x0, 0x1000000, 0x111111):
+    safe_pallet += [gr]
+safe_pallet += [
+        0xc0c0c0,
+        0x808080,
+        0x800000,
+        0x800080,
+        0x008000,
+        0x008080 ]
+safe_pallet += [0xffffff] * (256 - len(safe_pallet)) # ???
+
+parser = argparse.ArgumentParser()
+parser.add_argument('file', nargs='*', default=['-'])
+parser.add_argument('-w', '--width', type=int, default=128)
+parser.add_argument('-t', '--type', choices=['bz', 'safe', 'gray'], default='bz')
+args = parser.parse_args()
+
+s = b''
+for f in args.file:
+    if f == '-':
+        s += sys.stdout.buffer.read()
+    else:
+        with open(f) as f:
+            s += f.buffer.read()
+w = args.width
+h = (len(s) + w + 1) // w
+s += b'0' * (h*w - len(s))
+
+if args.type == 'gray':
+    sys.stdout.buffer.write(b'P5\n')
+    sys.stdout.buffer.write(b'%d %d\n' % (w, h))
+    sys.stdout.buffer.write(b'255\n')
+    sys.stdout.buffer.write(s)
+
+else:
+    if args.type == 'bz':
+        pallet = bz_pallet
+    elif args.type == 'safe':
+        pallet = safe_pallet
+    sys.stdout.buffer.write(b'P6\n')
+    sys.stdout.buffer.write(b'%d %d\n' % (w, h))
+    sys.stdout.buffer.write(b'255\n')
+    for y in range(h):
+        for x in range(w):
+            z = pallet[s[y*w+x]]
+            sys.stdout.buffer.write(struct.pack('>I', z)[1:])
