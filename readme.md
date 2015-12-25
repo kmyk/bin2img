@@ -5,7 +5,7 @@
 
 ## example
 
--   `bin2img.pnm`
+-   `bin2img`
     -   ![](https://github.com/kmyk/bin2pnm/raw/master/bin2img.pnm.png)
--   `bin2img.pnm.png.pnm`
+-   `bin2img.pnm.png`
     -   ![](https://github.com/kmyk/bin2pnm/raw/master/bin2img.pnm.png.pnm.png)
